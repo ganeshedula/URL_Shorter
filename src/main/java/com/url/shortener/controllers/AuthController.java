@@ -18,6 +18,9 @@ public class AuthController {
 
     private UserService userService;
 
+    //Long url  --> short url
+
+
     @PostMapping("/public/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest){
         // Implement login logic here
