@@ -1,83 +1,222 @@
-# URL Shortener Backend
+# 🔗 URL Shortener Backend (Spring Boot 3)
 
-Production-ready backend for a URL shortener built with Java 21, Spring Boot 3, Spring Security 6, PostgreSQL, Redis, JWT, Maven, Lombok, Validation, and OpenAPI.
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Security](https://img.shields.io/badge/Spring%20Security-6.x-blue.svg)](https://spring.io/projects/spring-security)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-red.svg)](https://redis.io/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-Swagger-green.svg)](http://localhost:8080/swagger-ui.html)
 
-## What Was Completed
+A production-ready, highly available RESTful URL Shortener backend service built with **Java 21**, **Spring Boot 3**, **Spring Security 6**, **PostgreSQL**, **Redis**, **JWT Authentication**, **Maven**, **Lombok**, and **OpenAPI/Swagger**.
 
-- Stateless JWT authentication with access and refresh tokens
-- Redis-backed refresh-session management with token rotation
-- Logout current session and logout-all support
-- Email-based registration and login
-- Current-user endpoint
-- URL create, redirect, update, delete, analytics, and owner-scoped listing
-- URL analytics with click count, last access, browser, OS, IP, country placeholder, and daily rollups
-- Auditing with `createdAt` and `updatedAt`
-- Consistent API response envelope
-- Global exception handling and validation
-- OpenAPI and Swagger UI
-- Docker Compose for PostgreSQL, Redis, and the Spring Boot app
-- Unit, controller, and integration tests
+---
 
-## Architecture
+## 🌟 Key Features
 
-### Main Modules
+### 🔐 Authentication & Session Management
+- **Stateless JWT Tokens**: Short-lived access tokens (15 minutes) and long-lived refresh tokens (7 days).
+- **Redis Session Management**: State management for refresh tokens stored in Redis with full token rotation support.
+- **Session Control**: Supports logging out single sessions or revoking all sessions across devices (`logout-all`).
+- **Account Endpoints**: Email-based registration, login, and user profile (`/api/auth/me`).
 
-- `controllers`: auth and URL endpoints
-- `service`: auth flow, Redis session lifecycle, URL logic, user lookup
-- `security`: JWT handling, filter, entrypoint, security config
-- `models`: JPA entities, enum role, Redis session payload
-- `repo`: JPA repositories and specifications support
-- `config`: JPA auditing, Redis template, app properties, OpenAPI
-- `exception`: custom exceptions and global error handling
-- `util`: short-code generation and request client parsing
-- `dtos`: request and response models
+### 🌐 URL Management & Real-Time Analytics
+- **Full CRUD Operations**: Create, read, update, delete, and list owner-scoped URLs.
+- **Pagination & Search**: List URLs with dynamic pagination, sorting, and search filtering.
+- **Fast Redirection**: High-performance HTTP 302 redirect lookup using unique short codes.
+- **Rich Analytics**: Tracks total click counts, last access timestamps, device OS, browser user-agents, client IP addresses, and daily click rollups.
+- **JPA Auditing**: Automatic creation and update timestamps (`createdAt`, `updatedAt`).
 
-### Authentication Flow
+### 🛡️ Resilience & Standards
+- **Standardized API Envelope**: All REST responses follow a uniform `ApiResponse<T>` wrapper.
+- **Global Error Handling**: Comprehensive validation annotations and centralized exception handler.
+- **OpenAPI & Swagger Documentation**: Auto-generated interactive API UI at runtime.
+- **Containerization**: Full Docker Compose setup for PostgreSQL, Redis, and Spring Boot.
+
+---
+
+## 🏗️ Architecture & Workflows
+
+### Authentication & Token Lifecycle Flow
 
 ```mermaid
 flowchart TD
-    A["POST /api/auth/login"] --> B["Validate email + password"]
-    B --> C["Generate access token (15m)"]
-    B --> D["Generate refresh token (7d)"]
-    D --> E["Store refresh session in Redis"]
-    C --> F["Return tokens to client"]
-    F --> G["Client calls protected API with Bearer access token"]
-    G --> H["JWT filter verifies signature, expiry, type, blacklist"]
-    H --> I["Request authorized"]
-    F --> J["POST /api/auth/refresh"]
-    J --> K["Validate refresh token + Redis session"]
-    K --> L["Rotate refresh token and issue new access token"]
-    F --> M["POST /api/auth/logout"]
-    M --> N["Delete Redis session and blacklist current access token"]
+    subgraph Login ["Login & Token Issuance"]
+        A["POST /api/auth/login"] --> B["Validate Credentials"]
+        B --> C["Generate Access Token (15m)"]
+        B --> D["Generate Refresh Token (7d)"]
+        D --> E["Store Session in Redis"]
+        C & D --> F["Return Tokens to Client"]
+    end
+
+    subgraph Request ["Authorized API Request"]
+        F --> G["API Request + Bearer Access Token"]
+        G --> H["JWT Filter Validates Token"]
+        H --> I["Request Authorized & Processed"]
+    end
+
+    subgraph Refresh ["Token Rotation"]
+        F --> J["POST /api/auth/refresh"]
+        J --> K["Validate Refresh Token & Redis Session"]
+        K --> L["Rotate Tokens & Refresh Redis Session"]
+    end
+
+    subgraph Logout ["Session Invalidation"]
+        F --> M["POST /api/auth/logout"]
+        M --> N["Delete Redis Session & Blacklist Token"]
+    end
 ```
 
-## API Documentation
+---
 
-Swagger UI:
-- `http://localhost:8080/swagger-ui.html`
+## 📁 Directory Structure
 
-OpenAPI JSON:
-- `http://localhost:8080/api-docs`
+```text
+src/
+├── main/
+│   ├── java/com/url/shortener/
+│   │   ├── config/          # Security, Redis, JPA Auditing, & OpenAPI configs
+│   │   ├── controllers/     # Authentication & URL Management REST Controllers
+│   │   ├── dtos/            # Request payloads & API Response Data Transfer Objects
+│   │   ├── exception/       # Custom exceptions & Global Exception Handler
+│   │   ├── models/          # JPA Entities (User, Url), Enums, & Redis Models
+│   │   ├── repo/            # Data Repositories & Specifications for search
+│   │   ├── security/        # JWT Filter, Authentication Entrypoints, Security Config
+│   │   ├── service/         # Business logic for Auth, URL shortener, & Sessions
+│   │   └── util/            # Base62 code generation & user-agent parsers
+│   └── resources/
+│       └── application.properties # Spring configuration file
+docs/
+├── database-schema.md       # Complete database ERD and table specifications
+└── postman/                # Exported Postman collection for API testing
+Dockerfile
+docker-compose.yml
+```
 
-### Auth Endpoints
+---
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/refresh`
-- `POST /api/auth/logout`
-- `POST /api/auth/logout-all`
-- `GET /api/auth/me`
+## 🚀 Getting Started
 
-### URL Endpoints
+### Prerequisites
 
-- `POST /api/url`
-- `GET /api/url/{id}`
-- `PUT /api/url/{id}`
-- `DELETE /api/url/{id}`
-- `GET /api/url/my?page=0&size=10&sortBy=createdAt&direction=desc&search=google`
-- `GET /{shortCode}`
+Ensure you have the following installed on your local environment:
+- **Java 21 JDK** or higher
+- **Docker** and **Docker Compose**
+- **Maven** (or use the included `./mvnw` wrapper)
 
-### Sample Response
+---
+
+### 1️⃣ Clone & Configure Environment
+
+Duplicate `.env.example` or create a `.env` file in the project root:
+
+```bash
+cp .env.example .env
+```
+
+---
+
+### 2️⃣ Run via Docker Compose (Recommended)
+
+To build and run the Spring Boot app alongside PostgreSQL and Redis in containers:
+
+```bash
+docker compose up --build -d
+```
+
+The application will start on **`http://localhost:8080`**.
+
+To stop the containers:
+```bash
+docker compose down
+```
+
+---
+
+### 3️⃣ Run Locally with Maven
+
+If you prefer running the Spring Boot application locally while starting PostgreSQL & Redis in Docker:
+
+1. **Start database and cache services**:
+   ```bash
+   docker compose up -d postgres redis
+   ```
+
+2. **Compile and build the package**:
+   ```bash
+   ./mvnw clean package
+   ```
+
+3. **Run the Spring Boot app**:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `SERVER_PORT` | HTTP port for the Spring Boot application | `8080` |
+| `DB_URL` | PostgreSQL JDBC Connection String | `jdbc:postgresql://localhost:5432/url_shortener` |
+| `DB_USERNAME` | PostgreSQL database user | `postgres` |
+| `DB_PASSWORD` | PostgreSQL database password | `postgres` |
+| `REDIS_HOST` | Hostname for Redis instance | `localhost` |
+| `REDIS_PORT` | Port for Redis instance | `6379` |
+| `REDIS_PASSWORD` | Access password for Redis instance | *(empty)* |
+| `APP_BASE_URL` | Base domain/URL used to generate shortened links | `http://localhost:8080` |
+| `APP_CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | `http://localhost:3000,http://localhost:8080` |
+| `JWT_SECRET` | Base64-encoded secret key for signing JWTs | *(Required in Production)* |
+
+---
+
+## 📖 API Documentation & Testing
+
+### Interactive Swagger UI & OpenAPI
+
+When the service is running, interactively test API endpoints directly in your browser:
+
+- 🌐 **Swagger UI**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- 📄 **OpenAPI Specification (JSON)**: [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
+
+### Postman Collection
+
+An updated Postman collection is included in the project for seamless API testing:
+
+- 📬 [docs/postman/url-shortener.postman_collection.json](docs/postman/url-shortener.postman_collection.json)
+
+---
+
+## 📡 REST API Endpoint Summary
+
+### 🔑 Authentication Endpoints (`/api/auth`)
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Register a new user account | 🔓 Public |
+| `POST` | `/api/auth/login` | Authenticate user and issue JWT access/refresh tokens | 🔓 Public |
+| `POST` | `/api/auth/refresh` | Obtain a new access token using a valid refresh token | 🔓 Public |
+| `POST` | `/api/auth/logout` | Revoke current refresh token session | 🔒 Bearer |
+| `POST` | `/api/auth/logout-all` | Revoke all active sessions across all devices | 🔒 Bearer |
+| `GET` | `/api/auth/me` | Retrieve profile information for the current user | 🔒 Bearer |
+
+### 🔗 URL Endpoints (`/api/url`)
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/url` | Create a shortened URL from a original URL | 🔒 Bearer |
+| `GET` | `/api/url/{id}` | Retrieve URL details and analytics by URL UUID | 🔒 Bearer |
+| `PUT` | `/api/url/{id}` | Update original destination URL or active status | 🔒 Bearer |
+| `DELETE` | `/api/url/{id}` | Delete a shortened URL | 🔒 Bearer |
+| `GET` | `/api/url/my` | Paginated listing of user's URLs with search filter | 🔒 Bearer |
+| `GET` | `/{shortCode}` | Public redirect endpoint to destination URL | 🔓 Public |
+
+---
+
+### 📦 Standardized API Response Format
+
+All responses follow a consistent `ApiResponse<T>` envelope structure:
 
 ```json
 {
@@ -99,89 +238,18 @@ OpenAPI JSON:
 }
 ```
 
-## Database Schema
+---
 
-Schema reference:
-- [docs/database-schema.md](/Users/ganesh/Downloads/URL_Shorter/url-shorter-sb/docs/database-schema.md)
+## 🗄️ Database Schema
 
-## Environment Variables
+For detailed database table definitions, foreign key constraints, and index details:
+- 📖 See [docs/database-schema.md](docs/database-schema.md)
 
-| Variable | Description | Default |
-|---|---|---|
-| `SERVER_PORT` | Spring Boot port | `8080` |
-| `DB_URL` | PostgreSQL JDBC URL | `jdbc:postgresql://localhost:5432/url_shortener` |
-| `DB_USERNAME` | PostgreSQL user | `postgres` |
-| `DB_PASSWORD` | PostgreSQL password | `postgres` |
-| `REDIS_HOST` | Redis host | `localhost` |
-| `REDIS_PORT` | Redis port | `6379` |
-| `REDIS_PASSWORD` | Redis password | empty |
-| `APP_BASE_URL` | Public base URL for generated links | `http://localhost:8080` |
-| `APP_CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins | `http://localhost:3000,http://localhost:8080` |
-| `JWT_SECRET` | Base64-encoded signing key | required in production |
+---
 
-See [.env.example](/Users/ganesh/Downloads/URL_Shorter/url-shorter-sb/.env.example).
+## 🚀 Roadmap & Enhancements
 
-## Setup Instructions
-
-1. Copy `.env.example` to `.env` and update secrets.
-2. Start dependencies with `docker compose up -d postgres redis`.
-3. Build the app with `./mvnw clean package`.
-4. Run the app with `./mvnw spring-boot:run`.
-5. Open Swagger at `http://localhost:8080/swagger-ui.html`.
-
-### Full Container Setup
-
-Run everything together:
-
-```bash
-docker compose up --build
-```
-
-## Folder Structure
-
-```text
-src/
-  main/
-    java/com/url/shortener/
-      config/
-      controllers/
-      dtos/
-      exception/
-      models/
-      repo/
-      security/
-      service/
-      util/
-    resources/
-      application.properties
-  test/
-    java/com/url/shortener/
-      controllers/
-      service/
-    resources/
-      application.properties
-docs/
-  database-schema.md
-  postman/
-Dockerfile
-docker-compose.yml
-```
-
-## Postman Collection
-
-- [docs/postman/url-shortener.postman_collection.json](/Users/ganesh/Downloads/URL_Shorter/url-shorter-sb/docs/postman/url-shortener.postman_collection.json)
-
-## Breaking Changes
-
-- Authentication is now email-based instead of username-based.
-- Public URL identifiers are now UUIDs instead of numeric IDs.
-- Endpoint contracts now match the requested production API shape.
-- Response bodies are wrapped in a consistent `ApiResponse` envelope.
-
-## Remaining Optional Enhancements
-
-- Replace the country placeholder with GeoIP resolution
-- Add rate limiting on auth and redirect endpoints
-- Add Flyway or Liquibase migrations for versioned schema management
-- Add observability with request tracing and metrics dashboards
-- Add admin-only moderation/reporting endpoints
+- [ ] GeoIP location parsing for click analytics (country/city lookup).
+- [ ] Rate-limiting per user/IP on auth and redirect endpoints.
+- [ ] Database schema migrations using Flyway or Liquibase.
+- [ ] Distributed logging and telemetry with Prometheus and Grafana.
