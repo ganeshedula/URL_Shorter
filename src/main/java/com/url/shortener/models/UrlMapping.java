@@ -1,30 +1,63 @@
 package com.url.shortener.models;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
 
-import jakarta.persistence.*;
-import lombok.Data;
-
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+@Getter
+@Setter
 @Entity
-@Data
+@Table(
+    name = "url_mappings",
+    indexes = {
+        @Index(name = "idx_url_mapping_short_code", columnList = "short_code", unique = true),
+        @Index(name = "idx_url_mapping_user_created_at", columnList = "user_id,created_at"),
+        @Index(name = "idx_url_mapping_original_url", columnList = "original_url")
+    }
+)
+public class UrlMapping extends BaseEntity {
 
-public class UrlMapping {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @UuidGenerator
+    private UUID id;
+
+    @Column(name = "original_url", nullable = false, length = 2048)
     private String originalUrl;
-    private String shortUrl;
-    private int clickCount = 0;
-    private LocalDateTime createdAt;
 
+    @Column(name = "short_code", nullable = false, unique = true, length = 20)
+    private String shortCode;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @Column(name = "click_count", nullable = false)
+    private long clickCount;
+
+    @Column(name = "last_accessed_at")
+    private OffsetDateTime lastAccessedAt;
+
+    @Column(name = "expiration_date")
+    private OffsetDateTime expirationDate;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "urlMapping")
-    private List<ClickEvent> clickEvents;
-
+    @OneToMany(mappedBy = "urlMapping", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ClickEvent> clickEvents = new ArrayList<>();
 }

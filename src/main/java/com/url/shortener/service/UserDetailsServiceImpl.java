@@ -1,8 +1,8 @@
 package com.url.shortener.service;
 
+import com.url.shortener.exception.UserNotFoundException;
 import com.url.shortener.models.User;
 import com.url.shortener.repo.UserRepository;
-import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,9 +18,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     @Override
-    public @NonNull UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-        return UserDetailsImpl.build(user);
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(username)
+            .orElseThrow(() -> new UserNotFoundException("User not found for email: " + username));
+        return UserDetailsImpl.fromUser(user);
     }
 }

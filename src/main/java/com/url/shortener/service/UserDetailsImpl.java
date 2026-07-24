@@ -1,61 +1,41 @@
 package com.url.shortener.service;
 
 import com.url.shortener.models.User;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.jspecify.annotations.Nullable;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
-
-@Data
-@NoArgsConstructor
+@Getter
 public class UserDetailsImpl implements UserDetails {
 
-    private static final long serialVersionUID = 1L;
-    private long id;
-    private String email;
-    private String username;
-    private String password;
+    private final UUID id;
+    private final String email;
+    private final String password;
+    private final Collection<? extends GrantedAuthority> authorities;
 
-    private Collection<? extends GrantedAuthority> authorities;
-
-    // Constructor parameter order changed to match usages in build()
-    public UserDetailsImpl(long id, String username, String email, String password, Collection<? extends GrantedAuthority> authorities) {
+    public UserDetailsImpl(UUID id, String email, String password, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
-        this.username = username;
         this.email = email;
         this.password = password;
         this.authorities = authorities;
     }
 
-    public static UserDetailsImpl build(User user){
-        GrantedAuthority authority = new SimpleGrantedAuthority(user.getRole());
+    public static UserDetailsImpl fromUser(User user) {
         return new UserDetailsImpl(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getPassword(),
-                Collections.singletonList(authority)
+            user.getId(),
+            user.getEmail(),
+            user.getPassword(),
+            List.of(new SimpleGrantedAuthority(user.getRole().name()))
         );
     }
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authorities;
-    }
-
-    @Override
-    public @Nullable String getPassword() {
-        return password;
-    }
-
-    @Override
     public String getUsername() {
-        return username;
+        return email;
     }
 }

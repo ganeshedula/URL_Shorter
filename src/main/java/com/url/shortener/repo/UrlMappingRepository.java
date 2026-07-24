@@ -1,14 +1,13 @@
 package com.url.shortener.repo;
 
 import com.url.shortener.models.UrlMapping;
-import com.url.shortener.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-@Repository
-public interface UrlMappingRepository extends JpaRepository<UrlMapping, Long> {
-    UrlMapping findByShortUrl(String shortUrl);
-    List<UrlMapping> findByUser(User user);
+public interface UrlMappingRepository extends JpaRepository<UrlMapping, UUID>, JpaSpecificationExecutor<UrlMapping> {
+    Optional<UrlMapping> findByShortCode(String shortCode);
+    boolean existsByShortCode(String shortCode);
 }

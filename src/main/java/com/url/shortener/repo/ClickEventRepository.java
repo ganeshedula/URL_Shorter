@@ -1,14 +1,12 @@
 package com.url.shortener.repo;
 
 import com.url.shortener.models.ClickEvent;
-import com.url.shortener.models.UrlMapping;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
-public interface ClickEventRepository extends JpaRepository<ClickEvent,Long> {
-    List<ClickEvent> findByUrlMappingAndTimestampBetween(UrlMapping urlMapping, LocalDateTime startDate, LocalDateTime endDate);
-    List<ClickEvent> findByUrlMappingInAndTimestampBetween(List<UrlMapping> urlMapping, LocalDateTime startDate, LocalDateTime endDate);
-
+public interface ClickEventRepository extends JpaRepository<ClickEvent, UUID> {
+    List<ClickEvent> findTop20ByUrlMapping_IdOrderByAccessedAtDesc(UUID urlMappingId);
+    List<ClickEvent> findByUrlMapping_IdOrderByAccessedAtAsc(UUID urlMappingId);
 }

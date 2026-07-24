@@ -1,12 +1,16 @@
 package com.url.shortener.dtos;
 
+import lombok.Builder;
+import lombok.Getter;
 
-import lombok.Data;
+import java.time.OffsetDateTime;
 
-import java.time.LocalDateTime;
-
-@Data
+@Getter
+@Builder
 public class ClickEventDto {
-    private LocalDateTime clickDate;
-    private Long count;
+    private final OffsetDateTime accessedAt;
+    private final String browser;
+    private final String operatingSystem;
+    private final String ipAddress;
+    private final String country;
 }
